@@ -5,6 +5,13 @@ const { StringDecoder } = require('string_decoder');
 const url = require('url');
 const config = require('./config');
 const fs = require('fs');
+const dataLib = require('./lib/data');
+
+// async function test() {
+//     dataLib.create('things', 'bbb', { key: 'value' })
+// }
+
+// test()
 
 //instantiate http server
 let httpServer = http.createServer((req, res) => unifiedServer(req, res));
@@ -48,7 +55,7 @@ let unifiedServer = (req, res) => {
         buffer += decoder.write(data);
     });
 
-    req.on('end', () => {
+    req.on('end', async () => {
         buffer += decoder.end()
         //choose the handler this request should go to. if one is not found use the not found handler
 
@@ -64,32 +71,25 @@ let unifiedServer = (req, res) => {
         }
 
         //route the request to the handler specified in the router
-        chosenHandler(data, (statusCode, payload) => {
-            //use the status code called back by the handler, or default 200
-            statusCode = typeof (statusCode) == 'number' ? statusCode : 200;
-
-            //use the payload called back by the handler, or default to {}
-            payload = typeof (payload) == 'object' ? payload : {}
-
-            //convert payload ot string
-            let payloadString = JSON.stringify(payload);
-
+        try {
+            let { statusCode = 200, payload = {} } = await chosenHandler(data)
             //return the response
             res.setHeader('contentType', 'application/json')
             res.writeHead(statusCode);
-            res.end(payloadString);
-        });
-
-    })
+            res.end(JSON.stringify(payload));
+        } catch (e) {
+            console.log(e)
+        }
+    });
 }
 
 //define handlers
 let handlers = {
-    notFound: (data, callback) => {
-        callback(404);
+    notFound: async (data) => {
+        return ({ statusCode: 404 })
     },
-    aaa: (data, callback) => {
-        callback(200);
+    aaa: async (data) => {
+        return ({ statusCode: 200, payload: { 'key': 'value' } })
     }
 };
 
