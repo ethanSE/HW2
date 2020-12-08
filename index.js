@@ -5,13 +5,8 @@ const { StringDecoder } = require('string_decoder');
 const url = require('url');
 const config = require('./config');
 const fs = require('fs');
-const dataLib = require('./lib/data');
-
-// async function test() {
-//     dataLib.create('things', 'bbb', { key: 'value' })
-// }
-
-// test()
+const handlers = require('./lib/handlers');
+const helpers = require('./lib/helpers')
 
 //instantiate http server
 let httpServer = http.createServer((req, res) => unifiedServer(req, res));
@@ -58,7 +53,6 @@ let unifiedServer = (req, res) => {
     req.on('end', async () => {
         buffer += decoder.end()
         //choose the handler this request should go to. if one is not found use the not found handler
-
         let chosenHandler = router.hasOwnProperty(trimmedPath) && router[trimmedPath] || handlers.notFound;
 
         //construct the data object to send to the handeler
@@ -67,7 +61,7 @@ let unifiedServer = (req, res) => {
             'queryStringObject': queryStringObject,
             'method': method,
             'headers': headers,
-            'payload': buffer
+            'payload': helpers.parseJsonToObject(buffer)
         }
 
         //route the request to the handler specified in the router
@@ -77,23 +71,15 @@ let unifiedServer = (req, res) => {
             res.setHeader('contentType', 'application/json')
             res.writeHead(statusCode);
             res.end(JSON.stringify(payload));
-        } catch (e) {
-            console.log(e)
+        } catch {
+            res.writeHead(500);
+            res.end();
         }
     });
 }
 
-//define handlers
-let handlers = {
-    notFound: async (data) => {
-        return ({ statusCode: 404 })
-    },
-    aaa: async (data) => {
-        return ({ statusCode: 200, payload: { 'key': 'value' } })
-    }
-};
-
 //define a request route
 let router = {
-    'aaa': handlers.aaa
+    'aaa': handlers.aaa,
+    'users': handlers.users
 };
