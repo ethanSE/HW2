@@ -71,7 +71,8 @@ let unifiedServer = (req, res) => {
             res.setHeader('contentType', 'application/json')
             res.writeHead(statusCode);
             res.end(JSON.stringify(payload));
-        } catch {
+        } catch (e) {
+            console.log(e)
             res.writeHead(500);
             res.end();
         }
@@ -81,5 +82,6 @@ let unifiedServer = (req, res) => {
 //define a request route
 let router = {
     'aaa': handlers.aaa,
-    'users': handlers.users
+    'users': handlers.users,
+    'tokens': handlers.tokens
 };
