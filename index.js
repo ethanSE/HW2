@@ -83,5 +83,6 @@ let unifiedServer = (req, res) => {
 let router = {
     'aaa': handlers.aaa,
     'users': handlers.users,
-    'tokens': handlers.tokens
+    'tokens': handlers.tokens,
+    'menu': handlers.menu
 };
