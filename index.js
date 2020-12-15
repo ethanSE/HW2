@@ -84,5 +84,6 @@ let router = {
     'aaa': handlers.aaa,
     'users': handlers.users,
     'tokens': handlers.tokens,
-    'menu': handlers.menu
+    'menu': handlers.menu,
+    'orders': handlers.orders
 };
