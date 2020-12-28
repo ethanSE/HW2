@@ -81,7 +81,6 @@ let unifiedServer = (req, res) => {
 
 //define a request route
 let router = {
-    'aaa': handlers.aaa,
     'users': handlers.users,
     'tokens': handlers.tokens,
     'menu': handlers.menu,
