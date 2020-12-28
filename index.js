@@ -66,11 +66,11 @@ let unifiedServer = (req, res) => {
 
         //route the request to the handler specified in the router
         try {
-            let { statusCode = 200, payload = {} } = await chosenHandler(data)
+            const { statusCode = 200, payload = '', contentType = 'application/json' } = await chosenHandler(data)
             //return the response
-            res.setHeader('contentType', 'application/json')
+            res.setHeader('Content-Type', contentType);
             res.writeHead(statusCode);
-            res.end(JSON.stringify(payload));
+            res.end(contentType === 'application/json' ? JSON.stringify(typeof (payload) == 'object' ? payload : {}) : payload);
         } catch (e) {
             console.log(e)
             res.writeHead(500);
