@@ -84,10 +84,15 @@ let unifiedServer = (req, res) => {
 
 //define a request route
 let router = {
+    // pages
     '': handlers.home,
+    'account/create': handlers.accountCreate,
+    // api
     'users': handlers.users,
     'tokens': handlers.tokens,
     'menu': handlers.menu,
     'orders': handlers.orders,
-    'public': handlers.public
+    //public
+    'public': handlers.public,
+    'favicon.ico' : handlers.favicon,
 };
