@@ -55,6 +55,9 @@ let unifiedServer = (req, res) => {
         //choose the handler this request should go to. if one is not found use the not found handler
         let chosenHandler = router.hasOwnProperty(trimmedPath) && router[trimmedPath] || handlers.notFound;
 
+        // If the request is within the public directory use to the public handler instead
+        chosenHandler = trimmedPath.includes('public/') ? handlers.public : chosenHandler;
+
         //construct the data object to send to the handeler
         let data = {
             'trimmedPath': trimmedPath,
@@ -85,5 +88,6 @@ let router = {
     'users': handlers.users,
     'tokens': handlers.tokens,
     'menu': handlers.menu,
-    'orders': handlers.orders
+    'orders': handlers.orders,
+    'public': handlers.public
 };
