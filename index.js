@@ -88,10 +88,10 @@ let router = {
     '': handlers.home,
     'account/create': handlers.accountCreate,
     // api
-    'users': handlers.users,
-    'tokens': handlers.tokens,
-    'menu': handlers.menu,
-    'orders': handlers.orders,
+    'api/users': handlers.users,
+    'api/tokens': handlers.tokens,
+    'api/menu': handlers.menu,
+    'api/orders': handlers.orders,
     //public
     'public': handlers.public,
     'favicon.ico' : handlers.favicon,
