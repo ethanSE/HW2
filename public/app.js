@@ -249,7 +249,7 @@ app.logUserOut = async (redirectUser = true) => {
     app.setSessionToken(false);
     // Send the user to the logged out page
     if (redirectUser) {
-        window.location = '';
+        window.location = 'session/deleted';
     }
 };
 

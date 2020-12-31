@@ -88,6 +88,7 @@ let router = {
     '': handlers.home,
     'account/create': handlers.accountCreate,
     'session/create': handlers.sessionCreate,
+    'session/deleted': handlers.sessionDeleted,
     // api
     'api/users': handlers.users,
     'api/tokens': handlers.tokens,
