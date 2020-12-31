@@ -263,6 +263,50 @@ app.setLoggedInClass = (add) => {
     }
 };
 
+// Renew the token
+app.renewToken = () => {
+    return new Promise(async (resolve, reject) => {
+        let currentTokenId = app.config.sessionToken?.tokenId || null;
+        console.log(app.config.sessionToken)
+        if (currentTokenId) {
+            // Update the token with a new expiration
+            let payload = {
+                'tokenId': currentTokenId,
+                'extend': true,
+            }
+            //make extend request
+            let extendResponse = await app.client.request(undefined, 'api/tokens', 'PUT', undefined, payload)
+            if (extendResponse.statusCode == 200) {
+                // Get the new token details
+                let queryStringObject = { 'id': currentTokenId };
+                let getTokenResponse = await app.client.request(undefined, 'api/tokens', 'GET', queryStringObject, undefined)
+                if (getTokenResponse.statusCode == 200) {
+                    resolve(getTokenResponse.payload);
+                } else {
+                    reject();
+                }
+            } else {
+                reject();
+            }
+        } else {
+            reject();
+        }
+    })
+};
+
+// Loop to renew token often
+app.tokenRenewalLoop = () => {
+    setInterval(async () => {
+        try {
+            let token = await app.renewToken();
+            app.setSessionToken(token);
+            console.log("Token renewed successfully @ " + Date.now(), token);
+        } catch (e) {
+            console.log('error renewing session token')
+        }
+    }, 1000 * 60);
+};
+
 app.init = () => {
     //bind forms
     app.bindForms();
@@ -272,6 +316,9 @@ app.init = () => {
 
     // Get the token from localstorage
     app.getSessionToken();
+
+    // set loop to auto renew token (keep user logged in)
+    app.tokenRenewalLoop();
 }
 
 // Call the init processes after the window loads

@@ -47,7 +47,7 @@ this API accepts requests with bodies of type JSON
     tokens can be extended to remain logged in
     required: extendRequestBody
     extendRequestBody = {
-        token: TOKEN_TO_EXTEND,
+        tokenId: TOKENID_TO_EXTEND,
         extend: true
     }
     tokens can only be extended if they have not already expired. If a token has expired create a new token with tokens/post
