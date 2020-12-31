@@ -87,6 +87,7 @@ let router = {
     // pages
     '': handlers.home,
     'account/create': handlers.accountCreate,
+    'session/create': handlers.sessionCreate,
     // api
     'api/users': handlers.users,
     'api/tokens': handlers.tokens,
@@ -94,5 +95,5 @@ let router = {
     'api/orders': handlers.orders,
     //public
     'public': handlers.public,
-    'favicon.ico' : handlers.favicon,
+    'favicon.ico': handlers.favicon,
 };

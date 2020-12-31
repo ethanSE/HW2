@@ -100,31 +100,33 @@ app.bindForms = () => {
             let payload = {};
 
             Array.from(form.elements).forEach((element) => {
-                // Determine class of element and set value accordingly
-                let classOfElement = typeof (element.classList.value) == 'string' && element.classList.value || '';
-                let valueOfElement = element.type == 'checkbox' && !classOfElement.includes('multiselect') ? element.checked : !classOfElement.includes('intval') ? element.value : parseInt(element.value);
-                let elementIsChecked = element.checked;
-                // Override the method of the form if the input's name is _method
-                let nameOfElement = element.name;
-                if (nameOfElement == '_method') {
-                    method = valueOfElement;
-                } else {
-                    // Create an payload field named "method" if the elements name is actually httpmethod
-                    if (nameOfElement == 'httpmethod') {
-                        nameOfElement = 'method';
-                    }
-                    // Create an payload field named "id" if the elements name is actually uid
-                    if (nameOfElement == 'uid') {
-                        nameOfElement = 'id';
-                    }
-                    // If the element has the class "multiselect" add its value(s) as array elements
-                    if (classOfElement.includes('multiselect')) {
-                        if (elementIsChecked) {
-                            payload[nameOfElement] = typeof (payload[nameOfElement]) == 'object' && payload[nameOfElement] instanceof Array ? payload[nameOfElement] : [];
-                            payload[nameOfElement].push(valueOfElement);
-                        }
+                if (element.type !== 'submit') {
+                    // Determine class of element and set value accordingly
+                    let classOfElement = typeof (element.classList.value) == 'string' && element.classList.value || '';
+                    let valueOfElement = element.type == 'checkbox' && !classOfElement.includes('multiselect') ? element.checked : !classOfElement.includes('intval') ? element.value : parseInt(element.value);
+                    let elementIsChecked = element.checked;
+                    // Override the method of the form if the input's name is _method
+                    let nameOfElement = element.name;
+                    if (nameOfElement == '_method') {
+                        method = valueOfElement;
                     } else {
-                        payload[nameOfElement] = valueOfElement;
+                        // Create an payload field named "method" if the elements name is actually httpmethod
+                        if (nameOfElement == 'httpmethod') {
+                            nameOfElement = 'method';
+                        }
+                        // Create an payload field named "id" if the elements name is actually uid
+                        if (nameOfElement == 'uid') {
+                            nameOfElement = 'id';
+                        }
+                        // If the element has the class "multiselect" add its value(s) as array elements
+                        if (classOfElement.includes('multiselect')) {
+                            if (elementIsChecked) {
+                                payload[nameOfElement] = typeof (payload[nameOfElement]) == 'object' && payload[nameOfElement] instanceof Array ? payload[nameOfElement] : [];
+                                payload[nameOfElement].push(valueOfElement);
+                            }
+                        } else {
+                            payload[nameOfElement] = valueOfElement;
+                        }
                     }
                 }
             })
@@ -179,13 +181,16 @@ app.formResponseProcessor = async (formId, requestPayload, responsePayload) => {
 
             // Show (unhide) the form error field on the form
             document.querySelector("#" + formId + " .formError").style.display = 'block';
-
         } else {
             // If successful, set the token and redirect the user
             app.setSessionToken(response.payload);
             window.location = '';
         }
-
+    }
+    // If login was successful, set the token in localstorage and redirect the user
+    if (formId == 'sessionCreate') {
+        app.setSessionToken(responsePayload);
+        window.location = '';
     }
 };
 
@@ -194,9 +199,82 @@ app.setSessionToken = (token) => {
     app.config.sessionToken = token;
     let tokenString = JSON.stringify(token);
     localStorage.setItem('token', tokenString);
+    if (typeof (token) == 'object') {
+        app.setLoggedInClass(true);
+    } else {
+        app.setLoggedInClass(false);
+    }
 };
+
+// Get the session token from localstorage and set it in the app.config object
+app.getSessionToken = () => {
+    let tokenString = localStorage.getItem('token');
+    if (typeof (tokenString) == 'string') {
+        try {
+            let token = JSON.parse(tokenString);
+            app.config.sessionToken = token;
+            if (typeof (token) == 'object') {
+                app.setLoggedInClass(true);
+            } else {
+                app.setLoggedInClass(false);
+            }
+        } catch (e) {
+            app.config.sessionToken = false;
+            app.setLoggedInClass(false);
+        }
+    }
+};
+
+// Bind the logout button
+app.bindLogoutButton = () => {
+    document.getElementById("logoutButton").addEventListener("click", (e) => {
+        // Stop it from redirecting anywhere
+        e.preventDefault();
+        // Log the user out
+        app.logUserOut();
+    });
+};
+
+// Log the user out then redirect them
+app.logUserOut = async (redirectUser = true) => {
+    // Get the current token id
+    let tokenId = typeof (app.config.sessionToken.id) == 'string' && app.config.sessionToken.id;
+
+    // Send the current token to the tokens endpoint to delete it
+    let queryStringObject = {
+        'id': tokenId
+    };
+    app.client.request(undefined, 'api/tokens', 'DELETE', queryStringObject, undefined)
+    // Set the app.config token as false
+    app.setSessionToken(false);
+    // Send the user to the logged out page
+    if (redirectUser) {
+        window.location = '';
+    }
+};
+
+// Set (or remove) the loggedIn class from the body
+app.setLoggedInClass = (add) => {
+    let target = document.querySelector("body");
+    if (add) {
+        target.classList.add('loggedIn');
+    } else {
+        target.classList.remove('loggedIn');
+    }
+};
+
+app.init = () => {
+    //bind forms
+    app.bindForms();
+
+    // Bind logout logout button
+    app.bindLogoutButton();
+
+    // Get the token from localstorage
+    app.getSessionToken();
+}
 
 // Call the init processes after the window loads
 window.onload = () => {
-    app.bindForms();
+    app.init();
 };
