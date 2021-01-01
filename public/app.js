@@ -15,10 +15,9 @@ app.config = {
 app.client = {}
 
 // Interface for making API calls returns a promise
-app.client.request = (headers, path, method, queryStringObject, payload) => {
+app.client.request = (headers = {}, path, method, queryStringObject, payload) => {
     return new Promise(async (resolve) => {
         // Set defaults
-        headers = typeof (headers) == 'object' && headers || {};
         path = typeof (path) == 'string' ? path : '/';
         method = typeof (method) == 'string' && ['POST', 'GET', 'PUT', 'DELETE'].includes(method.toUpperCase()) ? method.toUpperCase() : 'GET';
         queryStringObject = typeof (queryStringObject) == 'object' && queryStringObject || {};
@@ -53,7 +52,7 @@ app.client.request = (headers, path, method, queryStringObject, payload) => {
 
         // If there is a current session token set, add that as a header
         if (app.config.sessionToken) {
-            xhr.setRequestHeader("token", app.config.sessionToken.id);
+            xhr.setRequestHeader("token", app.config.sessionToken.tokenId);
         }
 
         // When the request comes back, handle the response
@@ -65,7 +64,6 @@ app.client.request = (headers, path, method, queryStringObject, payload) => {
                     let parsedResponse = JSON.parse(responseReturned);
                     resolve({ statusCode: statusCode, payload: parsedResponse })
                 } catch (e) {
-                    console.log(e)
                     resolve({ statusCode: statusCode })
                 }
             }
@@ -190,7 +188,7 @@ app.formResponseProcessor = async (formId, requestPayload, responsePayload) => {
     // If login was successful, set the token in localstorage and redirect the user
     if (formId == 'sessionCreate') {
         app.setSessionToken(responsePayload);
-        window.location = '';
+        window.location = '/orders/all';
     }
 };
 
@@ -267,7 +265,6 @@ app.setLoggedInClass = (add) => {
 app.renewToken = () => {
     return new Promise(async (resolve, reject) => {
         let currentTokenId = app.config.sessionToken?.tokenId || null;
-        console.log(app.config.sessionToken)
         if (currentTokenId) {
             // Update the token with a new expiration
             let payload = {
@@ -307,6 +304,75 @@ app.tokenRenewalLoop = () => {
     }, 1000 * 60);
 };
 
+app.loadDataOnPage = () => {
+    // Get the current page from the body class
+    var bodyClasses = document.querySelector("body").classList;
+    var primaryClass = typeof (bodyClasses[0]) == 'string' ? bodyClasses[0] : false;
+
+    // Logic for dashboard page
+    if (primaryClass == 'ordersList') {
+        app.loadOrdersListPage();
+    }
+};
+
+app.loadOrdersListPage = async () => {
+    // Get the phone number from the current token, or log the user out if none is there
+    var email = typeof (app.config.sessionToken.email) == 'string' ? app.config.sessionToken.email : false;
+    if (email) {
+        // Fetch the user data
+        var userQueryStringObject = {
+            'email': email
+        };
+
+        let userDataResult = await app.client.request(undefined, 'api/users', 'GET', userQueryStringObject, undefined)
+        if (userDataResult.statusCode == 200) {
+            // Determine how many orders the user has
+            var allOrders = userDataResult.payload.orders;
+            if (allOrders?.length > 0) {
+                // Show each created order as a new row in the table
+                allOrders.forEach(async (orderId) => {
+                    // Get the data for the order
+                    var orderQueryStringObject = {
+                        'orderId': orderId
+                    };
+                    let orderDataResult = await app.client.request(undefined, 'api/orders', 'GET', orderQueryStringObject, undefined);
+
+                    if (orderDataResult.statusCode == 200) {
+                        // Make the order data into a table row
+                        var table = document.getElementById("ordersListTable");
+                        var tr = table.insertRow(-1);
+                        tr.classList.add('orderRow');
+                        var td0 = tr.insertCell(0);
+                        var td1 = tr.insertCell(1);
+                        var td2 = tr.insertCell(2);
+                        var td3 = tr.insertCell(3);
+                        var td4 = tr.insertCell(4);
+                        td0.innerHTML = orderDataResult.payload.orderId;
+                        td1.innerHTML = orderDataResult.payload.totalPrice;
+                        let itemCount = Object.keys(orderDataResult.payload.items).reduce((acc, curr) => acc + orderDataResult.payload.items[curr], 0);
+                        td2.innerHTML = itemCount;
+                        td3.innerHTML = orderDataResult.payload.placed;
+                        td4.innerHTML = `<a href="/orders/edit?id=${orderDataResult.payload.orderId}">${orderDataResult.payload.placed ? "View" : "View / Edit / Delete"}</a>`;
+                    } else {
+                        console.log("Error trying to load order ID: ", orderId);
+                    }
+                    document.getElementById("noOrdersMessage").style.display = 'none';
+                });
+            } else {
+                // Show 'you have no orders' message
+                document.getElementById("noOrdersMessage").style.display = 'table-row';
+                // Show the createOrder CTA
+                document.getElementById("createOrderCTA").style.display = 'block';
+            }
+        } else {
+            // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
+            app.logUserOut();
+        }
+    } else {
+        app.logUserOut();
+    }
+}
+
 app.init = () => {
     //bind forms
     app.bindForms();
@@ -319,6 +385,9 @@ app.init = () => {
 
     // set loop to auto renew token (keep user logged in)
     app.tokenRenewalLoop();
+
+    // get data
+    app.loadDataOnPage();
 }
 
 // Call the init processes after the window loads
