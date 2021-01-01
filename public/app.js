@@ -324,40 +324,58 @@ app.loadOrdersListPage = async () => {
             'email': email
         };
 
+        let getOrderUpdateDOM = async (orderId) => {
+            // Get the data for the order
+            var orderQueryStringObject = {
+                'orderId': orderId
+            };
+            let orderDataResult = await app.client.request(undefined, 'api/orders', 'GET', orderQueryStringObject, undefined);
+
+            if (orderDataResult.statusCode == 200) {
+                // Make the order data into a table row
+                var table = document.getElementById("ordersListTable");
+                var tr = table.insertRow(-1);
+                tr.classList.add('orderRow');
+                var td0 = tr.insertCell(0);
+                var td1 = tr.insertCell(1);
+                var td2 = tr.insertCell(2);
+                var td3 = tr.insertCell(3);
+                var td4 = tr.insertCell(4);
+                td0.innerHTML = orderDataResult.payload.orderId;
+                td1.innerHTML = orderDataResult.payload.totalPrice;
+                let itemCount = Object.keys(orderDataResult.payload.items).reduce((acc, curr) => acc + orderDataResult.payload.items[curr], 0);
+                td2.innerHTML = itemCount;
+                td3.innerHTML = orderDataResult.payload.placed;
+                td4.innerHTML = `<a href="/orders/edit?id=${orderDataResult.payload.orderId}">${orderDataResult.payload.placed ? "View" : "View / Edit / Delete"}</a>`;
+            } else {
+                console.log("Error trying to load order ID: ", orderId);
+            }
+            document.getElementById("noOrdersMessage").style.display = 'none';
+        }
+
+        //bind to the order create button
+        document.getElementById("createOrderButton").addEventListener("click", async (e) => {
+            // Stop it from redirecting anywhere
+            e.preventDefault();
+            console.log('clicked')
+            let createResult = await app.client.request(undefined, 'api/orders', 'POST', undefined, { email: email })
+            if (createResult.statusCode === 200) {
+                console.log('created order successfully')
+                console.log(createResult)
+                getOrderUpdateDOM(createResult.payload.orderId)
+            } else {
+                console.log('error')
+                document.getElementById("errorMessage").innerHTML = '<p>error - failed to create order</p>';
+            }
+        });
+
         let userDataResult = await app.client.request(undefined, 'api/users', 'GET', userQueryStringObject, undefined)
         if (userDataResult.statusCode == 200) {
             // Determine how many orders the user has
             var allOrders = userDataResult.payload.orders;
             if (allOrders?.length > 0) {
                 // Show each created order as a new row in the table
-                allOrders.forEach(async (orderId) => {
-                    // Get the data for the order
-                    var orderQueryStringObject = {
-                        'orderId': orderId
-                    };
-                    let orderDataResult = await app.client.request(undefined, 'api/orders', 'GET', orderQueryStringObject, undefined);
-
-                    if (orderDataResult.statusCode == 200) {
-                        // Make the order data into a table row
-                        var table = document.getElementById("ordersListTable");
-                        var tr = table.insertRow(-1);
-                        tr.classList.add('orderRow');
-                        var td0 = tr.insertCell(0);
-                        var td1 = tr.insertCell(1);
-                        var td2 = tr.insertCell(2);
-                        var td3 = tr.insertCell(3);
-                        var td4 = tr.insertCell(4);
-                        td0.innerHTML = orderDataResult.payload.orderId;
-                        td1.innerHTML = orderDataResult.payload.totalPrice;
-                        let itemCount = Object.keys(orderDataResult.payload.items).reduce((acc, curr) => acc + orderDataResult.payload.items[curr], 0);
-                        td2.innerHTML = itemCount;
-                        td3.innerHTML = orderDataResult.payload.placed;
-                        td4.innerHTML = `<a href="/orders/edit?id=${orderDataResult.payload.orderId}">${orderDataResult.payload.placed ? "View" : "View / Edit / Delete"}</a>`;
-                    } else {
-                        console.log("Error trying to load order ID: ", orderId);
-                    }
-                    document.getElementById("noOrdersMessage").style.display = 'none';
-                });
+                allOrders.forEach((orderId) => getOrderUpdateDOM(orderId));
             } else {
                 // Show 'you have no orders' message
                 document.getElementById("noOrdersMessage").style.display = 'table-row';
