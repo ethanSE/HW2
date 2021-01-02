@@ -1,13 +1,13 @@
 Ethan Samuels-Ellingson  
 12/6/2020  
-HW2 for Node.js Master Class from Pirple.com  
 
+Full stack application for a pizza restaurant. Serves front end resources that allow a client to interact with the backend to create a user, log in, create/edit/delete orders and checkout.
 
 API Documentation:   
 this API accepts requests with bodies of type JSON
 
-# /Users: #  
-## /users/post  ##
+# /api/Users: #  
+## /api/users/post  ##
     used to create a new user  
     required: newUserObject (body)
     newUserObject = {
@@ -17,10 +17,10 @@ this API accepts requests with bodies of type JSON
         lastName: string,
         streetAddress: string
     }
-## /users/get ##
+## /api/users/get ##
     get a user object
     required: email (query parameter), token (header)
-## /users/put ##
+## /api/users/put ##
     used to update user attributes
     required: updateObject, token(header)
     updateObject = {
@@ -31,19 +31,19 @@ this API accepts requests with bodies of type JSON
         password: string (optional)
     }
     must supply one or more attribute to update, email, and token
-## /users/delete ##
+## /api/users/delete ##
     used to delete a user
     required: email (query parameter), token (header)
-# /tokens #
-## /tokens/post ##
+# /api/tokens #
+## /api/tokens/post ##
     create a token to perform authenticated requests
     required: email and password in body
     created token will be in response
-## /tokens/get ##
+## /api/tokens/get ##
     get a token
     required: token (query string param)
     ex: .../tokens/get?token=TOKEN_ID_TO_GET
-## /tokens/put ##
+## /api/tokens/put ##
     tokens can be extended to remain logged in
     required: extendRequestBody
     extendRequestBody = {
@@ -51,18 +51,18 @@ this API accepts requests with bodies of type JSON
         extend: true
     }
     tokens can only be extended if they have not already expired. If a token has expired create a new token with tokens/post
-## /tokens/delete ##
+## /api/tokens/delete ##
     delete a token to log the client out
     required: tokenId (query parameter), email(body)
-# /orders #
-## /orders/post ##
+# /api/orders #
+## /api/orders/post ##
     create an order
     required: email (body), token(header)
     will respond with new order (with orderId) when created
-## /orders/get ##
+## /api/orders/get ##
     get an order
     required: orderId(query parameter), token(header)
-## /orders/put ## 
+## /api/orders/put ## 
     updates an order
     add / remove items
     checkout

@@ -2,7 +2,7 @@
  * Frontend Logic for application
  *
  */
-const stripeTokenHardCoded = "sk_test_51Hyjn2FbMOA4ou76R0npLG5CEEy2FW8EXlzsxkhkxoVH4e1EEjEd4YNcP3lDIwRS9iIf4KVljK9m6XyX336YEnkE00JLIX9Sup";
+const stripeTokenHardCoded = "";
 
 // Container for frontend application
 let app = {};
