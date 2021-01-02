@@ -1,0 +1,55 @@
+<h1>Order Details</h1>
+<a class="backButton" href="/orders/all">Back</a>
+<hr />
+<h2 id="orderTitle"></h2>
+<div class="formWrapper">
+    <form id="ordersUpdateItems" action="/api/orders" method="PUT">
+        <input class="hiddenIdInput" type="hidden" name="orderId" />
+        <input type="hidden" name="_method" value="PUT" />
+
+        <table id="ordersEditTable">
+            <tr>
+                <th>Item</th>
+                <th>price</th>
+                <th>quantity</th>
+            </tr>
+        </table>
+
+        <div class="formError"></div>
+        <div class="formSuccess">Your Changes Have Been Saved</div>
+
+        <div class="inputWrapper ctaWrapper unplacedOrder">
+            <button type="submit" class="cta green">Update Order</button>
+        </div>
+    </form>
+</div>
+
+<div class="formWrapper unplacedOrder">
+    <form id="ordersCheckout" action="/api/orders" method="PUT">
+        <input type="hidden" name="_method" value="PUT" />
+        <input type="hidden" class="hiddenIdInput" name="orderId" />
+        <input type="hidden" id="stripeToken" name="stripeToken" />
+
+        <div class="formError"></div>
+        <div class="formSuccess">Your Changes Have Been Saved</div>
+
+        <div class="inputWrapper ctaWrapper unplacedOrder">
+            <button type="submit" class="cta green">Check out</button>
+        </div>
+    </form>
+</div>
+
+<hr />
+
+<h2 class="unplacedOrder">Delete Order</h2>
+<div class="formWrapper unplacedOrder">
+    <form id="ordersDelete" action="/api/orders" method="DELETE">
+        <input type="hidden" name="_method" value="DELETE" />
+        <div class="formError"></div>
+        <div class="warning">Warning: This action cannot be undone. Dont click this button on accident!</div>
+        <input class="hiddenIdInput" type="hidden" name="orderId" />
+        <div class="inputWrapper ctaWrapper">
+            <button type="submit" class="cta red">Delete Order</button>
+        </div>
+    </form>
+</div>

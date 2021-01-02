@@ -2,6 +2,7 @@
  * Frontend Logic for application
  *
  */
+const stripeTokenHardCoded = "sk_test_51Hyjn2FbMOA4ou76R0npLG5CEEy2FW8EXlzsxkhkxoVH4e1EEjEd4YNcP3lDIwRS9iIf4KVljK9m6XyX336YEnkE00JLIX9Sup";
 
 // Container for frontend application
 let app = {};
@@ -101,8 +102,7 @@ app.bindForms = () => {
                 if (element.type !== 'submit') {
                     // Determine class of element and set value accordingly
                     let classOfElement = typeof (element.classList.value) == 'string' && element.classList.value || '';
-                    let valueOfElement = element.type == 'checkbox' && !classOfElement.includes('multiselect') ? element.checked : !classOfElement.includes('intval') ? element.value : parseInt(element.value);
-                    let elementIsChecked = element.checked;
+                    let valueOfElement = classOfElement.includes('intval') ? parseInt(element.value) : element.value;
                     // Override the method of the form if the input's name is _method
                     let nameOfElement = element.name;
                     if (nameOfElement == '_method') {
@@ -112,19 +112,7 @@ app.bindForms = () => {
                         if (nameOfElement == 'httpmethod') {
                             nameOfElement = 'method';
                         }
-                        // Create an payload field named "id" if the elements name is actually uid
-                        if (nameOfElement == 'uid') {
-                            nameOfElement = 'id';
-                        }
-                        // If the element has the class "multiselect" add its value(s) as array elements
-                        if (classOfElement.includes('multiselect')) {
-                            if (elementIsChecked) {
-                                payload[nameOfElement] = typeof (payload[nameOfElement]) == 'object' && payload[nameOfElement] instanceof Array ? payload[nameOfElement] : [];
-                                payload[nameOfElement].push(valueOfElement);
-                            }
-                        } else {
-                            payload[nameOfElement] = valueOfElement;
-                        }
+                        payload[nameOfElement] = valueOfElement;
                     }
                 }
             })
@@ -136,18 +124,14 @@ app.bindForms = () => {
             let requestResult = await app.client.request(undefined, path, method, queryStringObject, payload)
             // Display an error on the form if needed
             if (requestResult.statusCode !== 200) {
-
                 if (requestResult.statusCode == 403) {
                     // log the user out
                     app.logUserOut();
                 } else {
-
                     // Try to get the error from the api, or set a default error message
                     let error = requestResult.payload?.Error || 'An error has occured, please try again';
-
                     // Set the formError field with the error text
                     document.querySelector("#" + formId + " .formError").innerHTML = error;
-
                     // Show (unhide) the form error field on the form
                     document.querySelector("#" + formId + " .formError").style.display = 'block';
                 }
@@ -188,6 +172,23 @@ app.formResponseProcessor = async (formId, requestPayload, responsePayload) => {
     // If login was successful, set the token in localstorage and redirect the user
     if (formId == 'sessionCreate') {
         app.setSessionToken(responsePayload);
+        window.location = '/orders/all';
+    }
+
+    if (formId == 'ordersUpdateItems') {
+        document.querySelector("#" + formId + " .formSuccess").style.display = 'block';
+    }
+
+    if (formId === 'ordersCheckout') {
+        //hide checkout and delete buttons
+        let thingsToHide = document.getElementsByClassName("unplacedOrder");
+        Array.from(thingsToHide).forEach((thing) => {
+            thing.style.display = 'none'
+        })
+    }
+
+    if (formId == 'ordersDelete') {
+        //go back to list
         window.location = '/orders/all';
     }
 };
@@ -306,47 +307,51 @@ app.tokenRenewalLoop = () => {
 
 app.loadDataOnPage = () => {
     // Get the current page from the body class
-    var bodyClasses = document.querySelector("body").classList;
-    var primaryClass = typeof (bodyClasses[0]) == 'string' ? bodyClasses[0] : false;
+    let bodyClasses = document.querySelector("body").classList;
+    let primaryClass = typeof (bodyClasses[0]) == 'string' ? bodyClasses[0] : false;
 
     // Logic for dashboard page
     if (primaryClass == 'ordersList') {
         app.loadOrdersListPage();
     }
+
+    if (primaryClass == 'ordersEdit') {
+        app.loadOrdersEditPage();
+    }
 };
 
 app.loadOrdersListPage = async () => {
     // Get the phone number from the current token, or log the user out if none is there
-    var email = typeof (app.config.sessionToken.email) == 'string' ? app.config.sessionToken.email : false;
+    let email = typeof (app.config.sessionToken.email) == 'string' ? app.config.sessionToken.email : false;
     if (email) {
         // Fetch the user data
-        var userQueryStringObject = {
+        let userQueryStringObject = {
             'email': email
         };
 
         let getOrderUpdateDOM = async (orderId) => {
             // Get the data for the order
-            var orderQueryStringObject = {
+            let orderQueryStringObject = {
                 'orderId': orderId
             };
             let orderDataResult = await app.client.request(undefined, 'api/orders', 'GET', orderQueryStringObject, undefined);
 
             if (orderDataResult.statusCode == 200) {
                 // Make the order data into a table row
-                var table = document.getElementById("ordersListTable");
-                var tr = table.insertRow(-1);
+                let table = document.getElementById("ordersListTable");
+                let tr = table.insertRow(-1);
                 tr.classList.add('orderRow');
-                var td0 = tr.insertCell(0);
-                var td1 = tr.insertCell(1);
-                var td2 = tr.insertCell(2);
-                var td3 = tr.insertCell(3);
-                var td4 = tr.insertCell(4);
+                let td0 = tr.insertCell(0);
+                let td1 = tr.insertCell(1);
+                let td2 = tr.insertCell(2);
+                let td3 = tr.insertCell(3);
+                let td4 = tr.insertCell(4);
                 td0.innerHTML = orderDataResult.payload.orderId;
                 td1.innerHTML = orderDataResult.payload.totalPrice;
                 let itemCount = Object.keys(orderDataResult.payload.items).reduce((acc, curr) => acc + orderDataResult.payload.items[curr], 0);
                 td2.innerHTML = itemCount;
                 td3.innerHTML = orderDataResult.payload.placed;
-                td4.innerHTML = `<a href="/orders/edit?id=${orderDataResult.payload.orderId}">${orderDataResult.payload.placed ? "View" : "View / Edit / Delete"}</a>`;
+                td4.innerHTML = `<a href="/orders/edit?orderId=${orderDataResult.payload.orderId}">${orderDataResult.payload.placed ? "View" : "View / Edit / Delete"}</a>`;
             } else {
                 console.log("Error trying to load order ID: ", orderId);
             }
@@ -357,14 +362,10 @@ app.loadOrdersListPage = async () => {
         document.getElementById("createOrderButton").addEventListener("click", async (e) => {
             // Stop it from redirecting anywhere
             e.preventDefault();
-            console.log('clicked')
             let createResult = await app.client.request(undefined, 'api/orders', 'POST', undefined, { email: email })
             if (createResult.statusCode === 200) {
-                console.log('created order successfully')
-                console.log(createResult)
                 getOrderUpdateDOM(createResult.payload.orderId)
             } else {
-                console.log('error')
                 document.getElementById("errorMessage").innerHTML = '<p>error - failed to create order</p>';
             }
         });
@@ -372,7 +373,7 @@ app.loadOrdersListPage = async () => {
         let userDataResult = await app.client.request(undefined, 'api/users', 'GET', userQueryStringObject, undefined)
         if (userDataResult.statusCode == 200) {
             // Determine how many orders the user has
-            var allOrders = userDataResult.payload.orders;
+            let allOrders = userDataResult.payload.orders;
             if (allOrders?.length > 0) {
                 // Show each created order as a new row in the table
                 allOrders.forEach((orderId) => getOrderUpdateDOM(orderId));
@@ -385,6 +386,65 @@ app.loadOrdersListPage = async () => {
         } else {
             // If the request comes back as something other than 200, log the user our (on the assumption that the api is temporarily down or the users token is bad)
             app.logUserOut();
+        }
+    } else {
+        app.logUserOut();
+    }
+}
+
+app.loadOrdersEditPage = async () => {
+    let menuObj = {
+        item0: { name: 'Pineapple pizza', price: 14 },
+        item1: { name: 'Pineapple pizza w/ extra pineapple', price: 16 },
+        item2: { name: 'Pineapple pizza w/ anchovies', price: 17 }
+    }
+    let menu = Object.keys(menuObj);
+    console.log('menu', menu)
+    let orderId = typeof (window.location.href.split('=')[1]) == 'string' && window.location.href.split('=')[1];
+    if (orderId) {
+        //get order
+        let orderQueryStringObject = {
+            'orderId': orderId
+        };
+        //display order id on page
+        document.getElementById('orderTitle').innerText = `Order ${orderId}`
+        //update hidden orderId inputs
+        Array.from(document.getElementsByClassName("hiddenIdInput")).forEach((hiddenInput) => hiddenInput.value = orderId)
+        //add stripe token to checkout form hidden value
+        document.getElementById('stripeToken').value = stripeTokenHardCoded;
+
+        let orderDataResult = await app.client.request(undefined, 'api/orders', 'GET', orderQueryStringObject, undefined);
+        if (orderDataResult.statusCode == 200) {
+            if (orderDataResult.payload.placed) {
+                //hide checkout and delete buttons
+                let thingsToHide = document.querySelectorAll(".unplacedOrder");
+                Array.from(thingsToHide).forEach((thing) => {
+                    thing.style.display = 'none'
+                })
+            } else {
+                //TODO
+                //bind to checkout and process request
+            }
+            //update dom with info from menu and order
+            let table = document.getElementById("ordersEditTable");
+            for (menuItem in menuObj) {
+                let tr = table.insertRow(-1);
+                let td0 = tr.insertCell(0);
+                let td1 = tr.insertCell(1);
+                let td2 = tr.insertCell(2);
+                td0.innerHTML = menuObj[menuItem].name;
+                td1.innerHTML = menuObj[menuItem].price;
+                td2.innerHTML = `<input type="number" min="0" name="${menuItem}" placeholder="Enter a quantity" 
+                value="${orderDataResult.payload.items[menuItem] || 0}" class='intval'
+                ${orderDataResult.payload.placed && 'readonly'}/>`
+            }
+            let tr = table.insertRow(-1);
+            let td0 = tr.insertCell(0);
+            let td1 = tr.insertCell(1);
+            td0.innerHTML = "total";
+            td1.innerHTML = orderDataResult.payload.totalPrice;
+        } else {
+            console.log('failed to load')
         }
     } else {
         app.logUserOut();
