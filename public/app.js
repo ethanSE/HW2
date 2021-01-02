@@ -177,6 +177,7 @@ app.formResponseProcessor = async (formId, requestPayload, responsePayload) => {
 
     if (formId == 'ordersUpdateItems') {
         document.querySelector("#" + formId + " .formSuccess").style.display = 'block';
+        app.loadOrdersEditPage();
     }
 
     if (formId === 'ordersCheckout') {
@@ -185,6 +186,7 @@ app.formResponseProcessor = async (formId, requestPayload, responsePayload) => {
         Array.from(thingsToHide).forEach((thing) => {
             thing.style.display = 'none'
         })
+        app.loadOrdersEditPage();
     }
 
     if (formId == 'ordersDelete') {
@@ -427,6 +429,7 @@ app.loadOrdersEditPage = async () => {
             }
             //update dom with info from menu and order
             let table = document.getElementById("ordersEditTable");
+            table.innerHTML = '';
             for (menuItem in menuObj) {
                 let tr = table.insertRow(-1);
                 let td0 = tr.insertCell(0);
