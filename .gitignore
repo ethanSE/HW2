@@ -1,2 +1,4 @@
 /https
-/.data
+/.data/orders/**
+/.data/tokens/**
+/.data/users/**

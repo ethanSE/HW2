@@ -1,0 +1,14 @@
+{
+    "item0": {
+        "name": "Pineapple pizza",
+        "price": 14
+    },
+    "item1": {
+        "name": "Pineapple pizza w/ extra pineapple",
+        "price": 16
+    },
+    "item2": {
+        "name": "Pineapple pizza w/ anchovies",
+        "price": 17
+    }
+}
